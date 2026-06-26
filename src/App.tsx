@@ -19,6 +19,7 @@ export default function App() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportedUrl, setExportedUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isUrlOverLimit, setIsUrlOverLimit] = useState(false);
 
   // 1. Initial Load & Hash routing
   useEffect(() => {
@@ -55,8 +56,8 @@ export default function App() {
     };
 
     const loadDraft = () => {
-      const savedTitle = localStorage.getItem('gijikiji_draft_title');
-      const savedContent = localStorage.getItem('gijikiji_draft_content');
+      const savedTitle = localStorage.getItem('sasattonote_draft_title');
+      const savedContent = localStorage.getItem('sasattonote_draft_content');
       
       setTitle(savedTitle !== null ? savedTitle : DEFAULT_TITLE);
       setContent(savedContent !== null ? savedContent : DEFAULT_CONTENT);
@@ -75,17 +76,33 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // 2. Auto Save drafts to LocalStorage
+  // 2. Auto Save drafts to LocalStorage & Check URL length
   useEffect(() => {
     if (isReadOnly || isLoading) return;
 
     setIsSaved(false);
     
-    // Simple debounce of 500ms to avoid excessive disk writes
-    const timeoutId = setTimeout(() => {
-      localStorage.setItem('gijikiji_draft_title', title);
-      localStorage.setItem('gijikiji_draft_content', content);
+    // Debounce to avoid excessive writes and Brotli calculations on every keystroke
+    const timeoutId = setTimeout(async () => {
+      localStorage.setItem('sasattonote_draft_title', title);
+      localStorage.setItem('sasattonote_draft_content', content);
       setIsSaved(true);
+
+      // Check compressed URL length
+      try {
+        const payload = {
+          t: title,
+          c: content,
+        };
+        const jsonStr = JSON.stringify(payload);
+        const compressed = await compressText(jsonStr);
+        const baseUrl = window.location.origin + window.location.pathname;
+        const shareUrl = `${baseUrl}#q=${compressed}`;
+        
+        setIsUrlOverLimit(shareUrl.length > 4000);
+      } catch (e) {
+        console.error('Failed to pre-calculate compressed length:', e);
+      }
     }, 500);
 
     return () => clearTimeout(timeoutId);
@@ -124,29 +141,26 @@ export default function App() {
     }
   };
 
-  // 4. Create New Blank / Sample Article (Removed confirm popup)
+  // 4. Create New Blank / Sample Article
   const handleNew = () => {
-    // Directly go to editor without confirm to prevent redirection/crash issues
     window.location.hash = '';
   };
 
-  // 5. Convert Read-Only page back to editable draft (Removed confirm popup)
+  // 5. Convert Read-Only page back to editable draft
   const handleEdit = () => {
-    // Direct operation
-    localStorage.setItem('gijikiji_draft_title', title);
-    localStorage.setItem('gijikiji_draft_content', content);
-    
-    // Directly update hash and switch mode
+    localStorage.setItem('sasattonote_draft_title', title);
+    localStorage.setItem('sasattonote_draft_content', content);
     window.location.hash = '';
   };
 
-  // 6. Reset Draft to original template (Removed confirm popup)
+  // 6. Reset Draft to original template
   const handleClearDraft = () => {
     setTitle(DEFAULT_TITLE);
     setContent(DEFAULT_CONTENT);
-    localStorage.setItem('gijikiji_draft_title', DEFAULT_TITLE);
-    localStorage.setItem('gijikiji_draft_content', DEFAULT_CONTENT);
+    localStorage.setItem('sasattonote_draft_title', DEFAULT_TITLE);
+    localStorage.setItem('sasattonote_draft_content', DEFAULT_CONTENT);
     setIsSaved(true);
+    setIsUrlOverLimit(false);
   };
 
   // Copy helper for modal
@@ -183,6 +197,7 @@ export default function App() {
         onNew={handleNew}
         onEdit={handleEdit}
         onClearDraft={handleClearDraft}
+        isUrlOverLimit={isUrlOverLimit}
       />
 
       {/* Main Workspace */}
@@ -241,6 +256,27 @@ export default function App() {
                 {copied ? 'コピー済' : 'コピー'}
               </button>
             </div>
+
+            {/* In-modal warning if URL exceeds 4000 chars */}
+            {isUrlOverLimit && (
+              <div 
+                style={{ 
+                  color: '#eab308', 
+                  fontSize: '0.8rem', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.35rem',
+                  marginBottom: '1rem',
+                  backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                  padding: '0.5rem',
+                  borderRadius: '0.25rem',
+                  border: '1px solid rgba(234, 179, 8, 0.2)'
+                }}
+              >
+                <span>⚠️</span>
+                <span><strong>注意：</strong>URLが4000文字を超えています。一部のチャットツールやSNSでは共有できない場合があります。</span>
+              </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1.5rem' }}>
               <a 

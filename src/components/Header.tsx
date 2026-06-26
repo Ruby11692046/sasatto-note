@@ -10,6 +10,7 @@ interface HeaderProps {
   onNew: () => void;
   onEdit: () => void;
   onClearDraft: () => void;
+  isUrlOverLimit: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -21,13 +22,14 @@ export const Header: React.FC<HeaderProps> = ({
   onNew,
   onEdit,
   onClearDraft,
+  isUrlOverLimit,
 }) => {
   return (
     <header className="main-header">
       <div className="logo-section">
-        <div className="logo-icon">擬</div>
-        <span className="logo-text">疑似記事</span>
-        <span className="logo-badge">GijiKiji</span>
+        <div className="logo-icon">さ</div>
+        <span className="logo-text">ささっとノート</span>
+        <span className="logo-badge">Sasatto Note</span>
       </div>
 
       {/* Editor/Preview mode switcher tabs when in editing mode */}
@@ -66,6 +68,30 @@ export const Header: React.FC<HeaderProps> = ({
               <RotateCcw size={14} />
               初期化
             </button>
+
+            {/* Custom Tooltip Warning when URL fragment gets too long */}
+            {isUrlOverLimit && (
+              <span className="tooltip-container">
+                <span 
+                  className="url-warning-icon" 
+                  style={{ 
+                    cursor: 'help', 
+                    fontSize: '1.25rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    userSelect: 'none',
+                    marginRight: '0.25rem'
+                  }}
+                >
+                  ⚠️
+                </span>
+                <span className="tooltip-content">
+                  ⚠️ 4000文字を超えています。サービスによっては共有できない場合があります
+                  <span className="tooltip-arrow"></span>
+                </span>
+              </span>
+            )}
+
             <button className="btn btn-primary" onClick={onExport}>
               <Share2 size={16} />
               エクスポート (URL共有)
