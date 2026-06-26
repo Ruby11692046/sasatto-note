@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { Calendar, User, Clock, BookOpen, List } from 'lucide-react';
+import { Clock, BookOpen, List } from 'lucide-react';
 
 interface PreviewProps {
   title: string;
@@ -89,10 +89,6 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
   }, [content]);
 
   const displayTitle = title.trim() || '無題の投稿';
-  const currentDate = useMemo(() => {
-    const today = new Date();
-    return `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
-  }, []);
 
   const stats = useMemo(() => {
     const count = content.length;
@@ -123,14 +119,6 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
         {/* Meta Info */}
         <div className="wp-post-meta">
           <div className="wp-meta-item">
-            <Calendar size={14} />
-            <span>{currentDate}</span>
-          </div>
-          <div className="wp-meta-item">
-            <User size={14} />
-            <span>執筆者: ゲスト</span>
-          </div>
-          <div className="wp-meta-item">
             <Clock size={14} />
             <span>読了目安: {stats.readTime}分</span>
           </div>
@@ -138,13 +126,6 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
             <BookOpen size={14} />
             <span>{stats.count}文字</span>
           </div>
-        </div>
-
-        {/* Feature Image Mock */}
-        <div className="wp-post-thumbnail-mock">
-          <span style={{ position: 'relative', zIndex: 2, fontWeight: 600, letterSpacing: '0.05em' }}>
-            Featured Image
-          </span>
         </div>
 
         {/* Table of Contents (TOC) */}
