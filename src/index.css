@@ -247,7 +247,7 @@ body {
   color: white;
 }
 
-/* Custom Tooltip styling for 4000 character warning */
+/* Custom Tooltip styling for 4000 character warning (Downwards tooltip) */
 .tooltip-container {
   position: relative;
   display: inline-flex;
@@ -257,9 +257,9 @@ body {
 
 .tooltip-content {
   position: absolute;
-  bottom: 135%;
+  top: 135%; /* Display BELOW the icon */
   left: 50%;
-  transform: translateX(-50%) translateY(4px);
+  transform: translateX(-50%) translateY(-4px);
   background-color: #1e293b;
   border: 1px solid #334155;
   color: #f8fafc;
@@ -276,12 +276,12 @@ body {
 
 .tooltip-arrow {
   position: absolute;
-  top: 100%;
+  bottom: 100%; /* Arrow points UP */
   left: 50%;
   transform: translateX(-50%);
   border-width: 6px;
   border-style: solid;
-  border-color: #1e293b transparent transparent transparent;
+  border-color: transparent transparent #1e293b transparent;
 }
 
 /* Show tooltip on hover */
