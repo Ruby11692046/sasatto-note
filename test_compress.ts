@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as zlib from 'zlib';
-import { encodeBinaryDict } from './src/utils/dict';
+import { encodeBinaryDict, decodeBinaryDict } from './src/utils/dict';
 
 function uint8ArrayToBase64Url(uint8Array: Uint8Array): string {
   let binary = '';
@@ -15,6 +15,23 @@ function uint8ArrayToBase64Url(uint8Array: Uint8Array): string {
     .replace(/=+$/, '');
 }
 
+function base64UrlToUint8Array(base64Url: string): Uint8Array {
+  let base64 = base64Url
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const pad = base64.length % 4;
+  if (pad) {
+    base64 += '='.repeat(4 - pad);
+  }
+  const binary = atob(base64);
+  const len = binary.length;
+  const uint8Array = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    uint8Array[i] = binary.charCodeAt(i);
+  }
+  return uint8Array;
+}
+
 function compressBrotliNode(bytes: Uint8Array): Uint8Array {
   const buffer = Buffer.from(bytes);
   const compressed = zlib.brotliCompressSync(buffer, {
@@ -25,40 +42,42 @@ function compressBrotliNode(bytes: Uint8Array): Uint8Array {
   return new Uint8Array(compressed);
 }
 
+function decompressBrotliNode(bytes: Uint8Array): Uint8Array {
+  const buffer = Buffer.from(bytes);
+  const decompressed = zlib.brotliDecompressSync(buffer);
+  return new Uint8Array(decompressed);
+}
+
 async function test() {
   const encoder = new TextEncoder();
   
   // Load dummy.txt
   const text = fs.readFileSync('/Users/ruby/workspace/gijikiji/dummy.txt', 'utf-8');
-
-  // We simulate a payload with an empty or short title as typically used in the editor
   const payload = JSON.stringify({ t: '', c: text });
-  
-  // N
+
+  // 1. C (Brotli Only)
   const rawBytes = encoder.encode(payload);
-  const nSize = uint8ArrayToBase64Url(rawBytes).length + 1;
-
-  // C
   const cBytes = compressBrotliNode(rawBytes);
-  const cSize = uint8ArrayToBase64Url(cBytes).length + 1;
+  const cBase64 = uint8ArrayToBase64Url(cBytes);
+  const cUrl = 'C' + cBase64;
 
-  // D
+  // 2. H (Hybrid: Dictionary + Brotli)
   const dictBytes = encodeBinaryDict(payload);
-  const dSize = uint8ArrayToBase64Url(dictBytes).length + 1;
-
-  // H
   const hBytes = compressBrotliNode(dictBytes);
-  const hSize = uint8ArrayToBase64Url(hBytes).length + 1;
+  const hBase64 = uint8ArrayToBase64Url(hBytes);
+  const hUrl = 'H' + hBase64;
 
   console.log(`--- dummy.txt (本文文字数: ${text.length}) ---`);
-  console.log(`C (Brotli Only):    ${cSize} 文字`);
-  console.log(`D (Dict Only):      ${dSize} 文字`);
-  console.log(`H (Hybrid):         ${hSize} 文字`);
-  console.log(`N (Raw Base64):     ${nSize} 文字`);
+  console.log(`C (Brotli Only):    ${cUrl.length} 文字`);
+  console.log(`H (Hybrid):         ${hUrl.length} 文字`);
   
-  const sizes = { C: cSize, D: dSize, H: hSize, N: nSize };
-  const min = Object.entries(sizes).reduce((a, b) => a[1] < b[1] ? a : b);
-  console.log(`=> 最小の方式: ${min[0]} (${min[1]} 文字)`);
+  const minUrl = [cUrl, hUrl].reduce((a, b) => a.length < b.length ? a : b);
+  console.log(`=> 最小の方式: ${minUrl[0]} (${minUrl.length} 文字)`);
+
+  // Verify H roundtrip
+  const decodedHBytes = decompressBrotliNode(base64UrlToUint8Array(hBase64));
+  const decodedHPayload = decodeBinaryDict(decodedHBytes);
+  console.log(`H方式の復元結果: ${decodedHPayload === payload ? '✅ 完全一致' : '❌ 不一致'}`);
 }
 
 test();

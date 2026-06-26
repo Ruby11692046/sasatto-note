@@ -49,8 +49,7 @@ function base64UrlToUint8Array(base64Url: string): Uint8Array {
 }
 
 /**
- * Evaluates multiple compression strategies (C, D, H, N) and returns the shortest result.
- * Optimizes dict (D) and hybrid (H) using byte-level tokenization.
+ * Evaluates Brotli Only (C) and Hybrid (H) compression strategies and returns the shorter result.
  */
 export async function compressText(text: string): Promise<string> {
   const brotli = await getBrotli();
@@ -68,16 +67,7 @@ export async function compressText(text: string): Promise<string> {
     console.error('Brotli standard compression failed:', e);
   }
 
-  // 2. D (Dictionary Only - now Binary tokenized)
-  try {
-    const dictBytes = encodeBinaryDict(text);
-    const base64 = uint8ArrayToBase64Url(dictBytes);
-    results.push({ prefix: 'D', text: 'D' + base64 });
-  } catch (e) {
-    console.error('Dictionary encoding failed:', e);
-  }
-
-  // 3. H (Hybrid: Dictionary + Brotli)
+  // 2. H (Hybrid: Dictionary + Brotli)
   try {
     const dictBytes = encodeBinaryDict(text);
     const hybridBytes = brotli.compress(dictBytes, { quality: 11 });
@@ -87,17 +77,14 @@ export async function compressText(text: string): Promise<string> {
     console.error('Hybrid compression failed:', e);
   }
 
-  // 4. N (Raw UTF-8 / No compression)
-  try {
+  // Fallback if both failed (extremely unlikely)
+  if (results.length === 0) {
     const rawBytes = encoder.encode(text);
-    const base64 = uint8ArrayToBase64Url(rawBytes);
-    results.push({ prefix: 'N', text: 'N' + base64 });
-  } catch (e) {
-    console.error('Raw encoding failed:', e);
+    return 'C' + uint8ArrayToBase64Url(rawBytes);
   }
 
   // Find the absolute shortest result
-  // If lengths are equal, we favor the order (C, D, H, N) since we only replace if strictly shorter (<).
+  // If lengths are equal, we default to C (Brotli standard) since we only replace if strictly shorter (<).
   let best = results[0];
   for (let i = 1; i < results.length; i++) {
     if (results[i].text.length < best.text.length) {
@@ -109,8 +96,7 @@ export async function compressText(text: string): Promise<string> {
 }
 
 /**
- * Automatically decodes a Base64URL string using the prefix (C, D, H, N).
- * Supports both older text-based dictionary items and newer binary-level mapping.
+ * Decodes a Base64URL string using the prefix (C or H).
  */
 export async function decompressText(prefixAndBase64: string): Promise<string> {
   if (prefixAndBase64.length === 0) return '';
@@ -128,24 +114,14 @@ export async function decompressText(prefixAndBase64: string): Promise<string> {
       const decompressedBytes = brotli.decompress(compressedBytes);
       return decoder.decode(decompressedBytes);
     }
-    case 'D': {
-      // Dictionary Only (Binary decoded)
-      const bytes = base64UrlToUint8Array(base64Url);
-      return decodeBinaryDict(bytes);
-    }
     case 'H': {
       // Hybrid (Dictionary + Brotli decoded)
       const compressedBytes = base64UrlToUint8Array(base64Url);
       const decompressedBytes = brotli.decompress(compressedBytes);
       return decodeBinaryDict(decompressedBytes);
     }
-    case 'N': {
-      // Raw UTF-8 / No compression
-      const bytes = base64UrlToUint8Array(base64Url);
-      return decoder.decode(bytes);
-    }
     default:
-      // Fallback for older links (which had no prefix and were standard Brotli compressed)
+      // Fallback for older links without prefix (standard Brotli compressed)
       try {
         const compressedBytes = base64UrlToUint8Array(prefixAndBase64);
         const decompressedBytes = brotli.decompress(compressedBytes);
