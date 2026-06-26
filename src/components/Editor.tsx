@@ -1,5 +1,19 @@
 import React, { useRef } from 'react';
-import { Bold, Italic, List, Quote, Code, Link } from 'lucide-react';
+import {
+  Bold,
+  Italic,
+  Strikethrough,
+  List,
+  ListOrdered,
+  ListTodo,
+  Quote,
+  Code,
+  Terminal,
+  Link,
+  Image,
+  Table,
+  Minus
+} from 'lucide-react';
 
 interface EditorProps {
   title: string;
@@ -17,7 +31,25 @@ export const Editor: React.FC<EditorProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Helper to insert markdown formatting at selection
-  const insertMarkdown = (type: 'bold' | 'italic' | 'h1' | 'h2' | 'h3' | 'list' | 'quote' | 'code' | 'link') => {
+  const insertMarkdown = (
+    type:
+      | 'bold'
+      | 'italic'
+      | 'strikethrough'
+      | 'h1'
+      | 'h2'
+      | 'h3'
+      | 'list'
+      | 'ordered-list'
+      | 'task-list'
+      | 'quote'
+      | 'code'
+      | 'inline-code'
+      | 'link'
+      | 'image'
+      | 'table'
+      | 'hr'
+  ) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -41,6 +73,11 @@ export const Editor: React.FC<EditorProps> = ({
         selectionOffsetStart = start + 1;
         selectionOffsetEnd = selectedText ? start + replacement.length - 1 : start + replacement.length - 1;
         break;
+      case 'strikethrough':
+        replacement = `~~${selectedText || '取り消し線'}~~`;
+        selectionOffsetStart = start + 2;
+        selectionOffsetEnd = selectedText ? start + replacement.length - 2 : start + replacement.length - 2;
+        break;
       case 'h1':
         replacement = `\n# ${selectedText || '見出し1'}\n`;
         selectionOffsetStart = start + replacement.length - 1;
@@ -61,6 +98,16 @@ export const Editor: React.FC<EditorProps> = ({
         selectionOffsetStart = start + replacement.length;
         selectionOffsetEnd = selectionOffsetStart;
         break;
+      case 'ordered-list':
+        replacement = `\n1. ${selectedText || 'リスト項目'}`;
+        selectionOffsetStart = start + replacement.length;
+        selectionOffsetEnd = selectionOffsetStart;
+        break;
+      case 'task-list':
+        replacement = `\n- [ ] ${selectedText || 'タスク項目'}`;
+        selectionOffsetStart = start + replacement.length;
+        selectionOffsetEnd = selectionOffsetStart;
+        break;
       case 'quote':
         replacement = `\n> ${selectedText || '引用テキスト'}\n`;
         selectionOffsetStart = start + replacement.length - 1;
@@ -71,10 +118,30 @@ export const Editor: React.FC<EditorProps> = ({
         selectionOffsetStart = start + 5;
         selectionOffsetEnd = selectedText ? start + replacement.length - 5 : start + replacement.length - 5;
         break;
+      case 'inline-code':
+        replacement = `\`${selectedText || 'コード'}\``;
+        selectionOffsetStart = start + 1;
+        selectionOffsetEnd = selectedText ? start + replacement.length - 1 : start + replacement.length - 1;
+        break;
       case 'link':
         replacement = `[${selectedText || 'リンクテキスト'}](https://)`;
         selectionOffsetStart = start + (selectedText ? replacement.length - 9 : 1); // Select inside parenthesis or text
         selectionOffsetEnd = selectionOffsetStart + (selectedText ? 8 : 6);
+        break;
+      case 'image':
+        replacement = `![${selectedText || '代替テキスト'}](https://)`;
+        selectionOffsetStart = start + (selectedText ? replacement.length - 9 : 2);
+        selectionOffsetEnd = selectionOffsetStart + (selectedText ? 8 : 6);
+        break;
+      case 'table':
+        replacement = `\n| ${selectedText || 'ヘッダー1'} | ヘッダー2 |\n| --- | --- |\n| セル1 | セル2 |\n`;
+        selectionOffsetStart = start + 3;
+        selectionOffsetEnd = selectedText ? start + 3 + selectedText.length : start + 3 + 'ヘッダー1'.length;
+        break;
+      case 'hr':
+        replacement = `\n---\n`;
+        selectionOffsetStart = start + replacement.length;
+        selectionOffsetEnd = selectionOffsetStart;
         break;
       default:
         return;
@@ -156,6 +223,12 @@ export const Editor: React.FC<EditorProps> = ({
         <button className="toolbar-btn" onClick={() => insertMarkdown('italic')} title="斜体 (Ctrl+I)">
           <Italic size={16} />
         </button>
+        <button className="toolbar-btn" onClick={() => insertMarkdown('strikethrough')} title="取り消し線">
+          <Strikethrough size={16} />
+        </button>
+        <button className="toolbar-btn" onClick={() => insertMarkdown('inline-code')} title="インラインコード">
+          <Code size={16} />
+        </button>
         
         <div className="toolbar-separator" />
         
@@ -174,14 +247,32 @@ export const Editor: React.FC<EditorProps> = ({
         <button className="toolbar-btn" onClick={() => insertMarkdown('list')} title="箇条書きリスト">
           <List size={16} />
         </button>
+        <button className="toolbar-btn" onClick={() => insertMarkdown('ordered-list')} title="番号付きリスト">
+          <ListOrdered size={16} />
+        </button>
+        <button className="toolbar-btn" onClick={() => insertMarkdown('task-list')} title="タスクリスト">
+          <ListTodo size={16} />
+        </button>
         <button className="toolbar-btn" onClick={() => insertMarkdown('quote')} title="引用">
           <Quote size={16} />
         </button>
         <button className="toolbar-btn" onClick={() => insertMarkdown('code')} title="コードブロック">
-          <Code size={16} />
+          <Terminal size={16} />
         </button>
+        <button className="toolbar-btn" onClick={() => insertMarkdown('hr')} title="水平線">
+          <Minus size={16} />
+        </button>
+
+        <div className="toolbar-separator" />
+
         <button className="toolbar-btn" onClick={() => insertMarkdown('link')} title="リンク">
           <Link size={16} />
+        </button>
+        <button className="toolbar-btn" onClick={() => insertMarkdown('image')} title="画像">
+          <Image size={16} />
+        </button>
+        <button className="toolbar-btn" onClick={() => insertMarkdown('table')} title="テーブル">
+          <Table size={16} />
         </button>
       </div>
 
