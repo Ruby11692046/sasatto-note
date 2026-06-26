@@ -1,5 +1,5 @@
 import brotliPromise from 'brotli-wasm';
-import { encodeDictionary, decodeDictionary } from './dict';
+import { encodeBinaryDict, decodeBinaryDict } from './dict';
 
 let brotliInstance: any = null;
 
@@ -50,6 +50,7 @@ function base64UrlToUint8Array(base64Url: string): Uint8Array {
 
 /**
  * Evaluates multiple compression strategies (C, D, H, N) and returns the shortest result.
+ * Optimizes dict (D) and hybrid (H) using byte-level tokenization.
  */
 export async function compressText(text: string): Promise<string> {
   const brotli = await getBrotli();
@@ -67,10 +68,9 @@ export async function compressText(text: string): Promise<string> {
     console.error('Brotli standard compression failed:', e);
   }
 
-  // 2. D (Dictionary Only)
+  // 2. D (Dictionary Only - now Binary tokenized)
   try {
-    const dictEncodedText = encodeDictionary(text);
-    const dictBytes = encoder.encode(dictEncodedText);
+    const dictBytes = encodeBinaryDict(text);
     const base64 = uint8ArrayToBase64Url(dictBytes);
     results.push({ prefix: 'D', text: 'D' + base64 });
   } catch (e) {
@@ -79,8 +79,7 @@ export async function compressText(text: string): Promise<string> {
 
   // 3. H (Hybrid: Dictionary + Brotli)
   try {
-    const dictEncodedText = encodeDictionary(text);
-    const dictBytes = encoder.encode(dictEncodedText);
+    const dictBytes = encodeBinaryDict(text);
     const hybridBytes = brotli.compress(dictBytes, { quality: 11 });
     const base64 = uint8ArrayToBase64Url(hybridBytes);
     results.push({ prefix: 'H', text: 'H' + base64 });
@@ -111,6 +110,7 @@ export async function compressText(text: string): Promise<string> {
 
 /**
  * Automatically decodes a Base64URL string using the prefix (C, D, H, N).
+ * Supports both older text-based dictionary items and newer binary-level mapping.
  */
 export async function decompressText(prefixAndBase64: string): Promise<string> {
   if (prefixAndBase64.length === 0) return '';
@@ -129,17 +129,15 @@ export async function decompressText(prefixAndBase64: string): Promise<string> {
       return decoder.decode(decompressedBytes);
     }
     case 'D': {
-      // Dictionary Only
+      // Dictionary Only (Binary decoded)
       const bytes = base64UrlToUint8Array(base64Url);
-      const dictText = decoder.decode(bytes);
-      return decodeDictionary(dictText);
+      return decodeBinaryDict(bytes);
     }
     case 'H': {
-      // Hybrid (Dictionary + Brotli)
+      // Hybrid (Dictionary + Brotli decoded)
       const compressedBytes = base64UrlToUint8Array(base64Url);
       const decompressedBytes = brotli.decompress(compressedBytes);
-      const dictText = decoder.decode(decompressedBytes);
-      return decodeDictionary(dictText);
+      return decodeBinaryDict(decompressedBytes);
     }
     case 'N': {
       // Raw UTF-8 / No compression
