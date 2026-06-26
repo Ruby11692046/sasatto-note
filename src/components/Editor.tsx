@@ -165,29 +165,7 @@ export const Editor: React.FC<EditorProps> = ({
     }, 0);
   };
 
-  // Tab key indent handling
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const textarea = textareaRef.current;
-      if (!textarea) return;
 
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const val = textarea.value;
-      
-      const indent = '  '; // 2 spaces
-      const newValue = val.substring(0, start) + indent + val.substring(end);
-      onContentChange(newValue);
-
-      // Restore cursor position
-      setTimeout(() => {
-        if (textarea) {
-          textarea.selectionStart = textarea.selectionEnd = start + indent.length;
-        }
-      }, 0);
-    }
-  };
 
   const getStats = () => {
     const charCount = content.length;
@@ -283,7 +261,6 @@ export const Editor: React.FC<EditorProps> = ({
           placeholder="記事の内容をMarkdown形式で記述してください。上部のツールバーで装飾が可能です..."
           value={content}
           onChange={(e) => onContentChange(e.target.value)}
-          onKeyDown={handleKeyDown}
         />
       </div>
       

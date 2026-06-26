@@ -18,6 +18,7 @@ interface TocItem {
 const customMarked = new Marked();
 
 customMarked.use({
+  breaks: true,
   renderer: {
     heading({ text, depth, raw }: { text: string; depth: number; raw: string }) {
       // Create a URL-friendly anchor ID
