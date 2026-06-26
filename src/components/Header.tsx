@@ -85,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
                   ⚠️
                 </span>
                 <span className="tooltip-content">
-                  ⚠️ 4000文字を超えています。サービスによっては共有できない場合があります
+                  ⚠️ エンコードしたURLが4000文字を超えています。サービスによっては共有できない場合があります
                   <span className="tooltip-arrow"></span>
                 </span>
               </span>

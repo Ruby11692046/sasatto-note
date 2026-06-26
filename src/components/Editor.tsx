@@ -172,21 +172,7 @@ export const Editor: React.FC<EditorProps> = ({
 
 
 
-  const getStats = () => {
-    const charCount = content.length;
-    const charCountNoSpaces = content.replace(/\s/g, '').length;
-    const wordCount = content.trim() === '' ? 0 : content.trim().split(/\s+/).length;
-    const readTimeMin = Math.max(1, Math.ceil(charCount / 600));
 
-    return {
-      charCount,
-      charCountNoSpaces,
-      wordCount,
-      readTimeMin,
-    };
-  };
-
-  const stats = getStats();
 
   return (
     <div className="editor-container">
@@ -269,16 +255,7 @@ export const Editor: React.FC<EditorProps> = ({
         />
       </div>
       
-      <div className="editor-footer">
-        <div>
-          <span>文字数: <strong>{stats.charCount}</strong> (空白除く: {stats.charCountNoSpaces})</span>
-          <span style={{ margin: '0 0.75rem', color: 'var(--border-color)' }}>|</span>
-          <span>単語数: <strong>{stats.wordCount}</strong></span>
-        </div>
-        <div>
-          <span>読了目安: <strong>約 {stats.readTimeMin} 分</strong></span>
-        </div>
-      </div>
+
     </div>
   );
 };

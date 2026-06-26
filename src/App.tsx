@@ -264,17 +264,18 @@ export default function App() {
                   color: '#eab308', 
                   fontSize: '0.8rem', 
                   display: 'flex', 
-                  alignItems: 'center', 
+                  alignItems: 'flex-start', 
                   gap: '0.35rem',
                   marginBottom: '1rem',
                   backgroundColor: 'rgba(234, 179, 8, 0.1)',
                   padding: '0.5rem',
                   borderRadius: '0.25rem',
-                  border: '1px solid rgba(234, 179, 8, 0.2)'
+                  border: '1px solid rgba(234, 179, 8, 0.2)',
+                  wordBreak: 'break-all'
                 }}
               >
-                <span>⚠️</span>
-                <span><strong>注意：</strong>URLが4000文字を超えています。一部のチャットツールやSNSでは共有できない場合があります。</span>
+                <span style={{ flexShrink: 0 }}>⚠️</span>
+                <span><strong>注意：</strong>エンコードしたURLが4000文字を超えています。一部のチャットツールやSNSでは共有できない場合があります。</span>
               </div>
             )}
 
