@@ -247,6 +247,12 @@ body {
   color: white;
 }
 
+.btn-clear {
+  padding: 0.4rem 0.75rem;
+  display: flex;
+  gap: 0.25rem;
+}
+
 /* Custom Tooltip styling for 4000 character warning (Downwards tooltip) */
 .tooltip-container {
   position: relative;
@@ -776,5 +782,62 @@ body {
   
   .main-header {
     padding: 0.75rem 1rem;
+  }
+}
+
+/* Responsive adjustments for Header on Mobile */
+@media (max-width: 680px) {
+  .main-header {
+    padding: 0.5rem 0.75rem;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+
+  .logo-text,
+  .logo-badge,
+  .status-text,
+  .btn-text,
+  .tab-text {
+    display: none !important;
+  }
+
+  /* Make header elements more compact */
+  .logo-section {
+    gap: 0;
+    flex-shrink: 0;
+  }
+
+  .logo-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 1rem;
+  }
+
+  .tab-group {
+    padding: 0.15rem;
+    flex-shrink: 0;
+  }
+
+  .tab-btn {
+    padding: 0.35rem 0.5rem;
+  }
+
+  .actions-section {
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  .btn {
+    padding: 0.4rem 0.5rem !important; /* Force tighter padding on mobile */
+  }
+
+  .btn-clear {
+    padding: 0.4rem 0.5rem !important;
+  }
+
+  .status-badge {
+    margin-right: 0.15rem;
+    flex-shrink: 0;
   }
 }

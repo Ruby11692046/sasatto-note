@@ -40,14 +40,14 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => onViewModeChange('edit')}
           >
             <FileText size={14} />
-            編集
+            <span className="tab-text">編集</span>
           </button>
           <button
             className={`tab-btn ${viewMode === 'preview' ? 'active' : ''}`}
             onClick={() => onViewModeChange('preview')}
           >
             <Eye size={14} />
-            プレビュー
+            <span className="tab-text">プレビュー</span>
           </button>
         </div>
       )}
@@ -57,16 +57,15 @@ export const Header: React.FC<HeaderProps> = ({
           <>
             <span className="status-badge">
               <span className={`status-indicator ${isSaved ? 'saved' : ''}`} />
-              {isSaved ? '自動保存済み' : '下書き保存中'}
+              <span className="status-text">{isSaved ? '自動保存済み' : '下書き保存中'}</span>
             </span>
             <button 
-              className="btn btn-secondary btn-danger" 
+              className="btn btn-secondary btn-danger btn-clear" 
               onClick={onClearDraft} 
               title="下書きを完全に消去して初期化します"
-              style={{ padding: '0.4rem 0.75rem', display: 'flex', gap: '0.25rem' }}
             >
               <RotateCcw size={14} />
-              初期化
+              <span className="btn-text">初期化</span>
             </button>
 
             {/* Custom Tooltip Warning when URL fragment gets too long */}
@@ -92,23 +91,23 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             )}
 
-            <button className="btn btn-primary" onClick={onExport}>
+            <button className="btn btn-primary" onClick={onExport} title="URLにデータを圧縮してエクスポート">
               <Share2 size={16} />
-              エクスポート (URL共有)
+              <span className="btn-text">共有URL</span>
             </button>
           </>
         ) : (
           <>
             <span className="logo-badge" style={{ background: 'var(--border-color)', color: 'var(--text-secondary)' }}>
-              閲覧専用モード
+              閲覧専用
             </span>
-            <button className="btn btn-secondary" onClick={onEdit}>
+            <button className="btn btn-secondary" onClick={onEdit} title="エディタにコピーして編集">
               <Edit size={16} />
-              エディタにコピーして編集
+              <span className="btn-text">編集する</span>
             </button>
-            <button className="btn btn-primary" onClick={onNew}>
+            <button className="btn btn-primary" onClick={onNew} title="新規作成">
               <Plus size={16} />
-              新規作成
+              <span className="btn-text">新しく書く</span>
             </button>
           </>
         )}
