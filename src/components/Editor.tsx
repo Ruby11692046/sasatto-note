@@ -53,6 +53,9 @@ export const Editor: React.FC<EditorProps> = ({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
+    // Save current scroll position
+    const savedScrollTop = textarea.scrollTop;
+
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = textarea.value;
@@ -161,6 +164,8 @@ export const Editor: React.FC<EditorProps> = ({
           // If no selection, put cursor in the middle (e.g. between **)
           textarea.setSelectionRange(selectionOffsetStart, selectionOffsetEnd);
         }
+        // Restore scroll position
+        textarea.scrollTop = savedScrollTop;
       }
     }, 0);
   };
@@ -195,61 +200,61 @@ export const Editor: React.FC<EditorProps> = ({
       
       {/* Formatting toolbar */}
       <div className="editor-toolbar">
-        <button className="toolbar-btn" onClick={() => insertMarkdown('bold')} title="太字 (Ctrl+B)">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('bold'); }} title="太字 (Ctrl+B)">
           <Bold size={16} />
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('italic')} title="斜体 (Ctrl+I)">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('italic'); }} title="斜体 (Ctrl+I)">
           <Italic size={16} />
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('strikethrough')} title="取り消し線">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('strikethrough'); }} title="取り消し線">
           <Strikethrough size={16} />
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('inline-code')} title="インラインコード">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('inline-code'); }} title="インラインコード">
           <Code size={16} />
         </button>
         
         <div className="toolbar-separator" />
         
-        <button className="toolbar-btn" onClick={() => insertMarkdown('h1')} title="見出し 1" style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('h1'); }} title="見出し 1" style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
           H1
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('h2')} title="見出し 2" style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('h2'); }} title="見出し 2" style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
           H2
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('h3')} title="見出し 3" style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('h3'); }} title="見出し 3" style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
           H3
         </button>
 
         <div className="toolbar-separator" />
 
-        <button className="toolbar-btn" onClick={() => insertMarkdown('list')} title="箇条書きリスト">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('list'); }} title="箇条書きリスト">
           <List size={16} />
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('ordered-list')} title="番号付きリスト">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('ordered-list'); }} title="番号付きリスト">
           <ListOrdered size={16} />
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('task-list')} title="タスクリスト">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('task-list'); }} title="タスクリスト">
           <ListTodo size={16} />
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('quote')} title="引用">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('quote'); }} title="引用">
           <Quote size={16} />
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('code')} title="コードブロック">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('code'); }} title="コードブロック">
           <Terminal size={16} />
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('hr')} title="水平線">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('hr'); }} title="水平線">
           <Minus size={16} />
         </button>
 
         <div className="toolbar-separator" />
 
-        <button className="toolbar-btn" onClick={() => insertMarkdown('link')} title="リンク">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('link'); }} title="リンク">
           <Link size={16} />
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('image')} title="画像">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('image'); }} title="画像">
           <Image size={16} />
         </button>
-        <button className="toolbar-btn" onClick={() => insertMarkdown('table')} title="テーブル">
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('table'); }} title="テーブル">
           <Table size={16} />
         </button>
       </div>
