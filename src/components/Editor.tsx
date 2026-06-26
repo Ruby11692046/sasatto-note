@@ -67,82 +67,82 @@ export const Editor: React.FC<EditorProps> = ({
 
     switch (type) {
       case 'bold':
-        replacement = `**${selectedText || '太字'}**`;
-        selectionOffsetStart = start + 2;
-        selectionOffsetEnd = selectedText ? start + replacement.length - 2 : start + replacement.length - 2;
+        replacement = ` **${selectedText || '太字'}** `;
+        selectionOffsetStart = start + 4;
+        selectionOffsetEnd = selectedText ? start + replacement.length - 4 : start + replacement.length - 4;
         break;
       case 'italic':
-        replacement = `*${selectedText || '斜体'}*`;
-        selectionOffsetStart = start + 1;
-        selectionOffsetEnd = selectedText ? start + replacement.length - 1 : start + replacement.length - 1;
+        replacement = ` *${selectedText || '斜体'}* `;
+        selectionOffsetStart = start + 3;
+        selectionOffsetEnd = selectedText ? start + replacement.length - 3 : start + replacement.length - 3;
         break;
       case 'strikethrough':
-        replacement = `~~${selectedText || '取り消し線'}~~`;
-        selectionOffsetStart = start + 2;
-        selectionOffsetEnd = selectedText ? start + replacement.length - 2 : start + replacement.length - 2;
+        replacement = ` ~~${selectedText || '取り消し線'}~~ `;
+        selectionOffsetStart = start + 4;
+        selectionOffsetEnd = selectedText ? start + replacement.length - 4 : start + replacement.length - 4;
         break;
       case 'h1':
-        replacement = `\n# ${selectedText || '見出し1'}\n`;
-        selectionOffsetStart = start + replacement.length - 1;
+        replacement = `\n\n# ${selectedText || '見出し1'}\n\n`;
+        selectionOffsetStart = start + replacement.length - 2;
         selectionOffsetEnd = selectionOffsetStart;
         break;
       case 'h2':
-        replacement = `\n## ${selectedText || '見出し2'}\n`;
-        selectionOffsetStart = start + replacement.length - 1;
+        replacement = `\n\n## ${selectedText || '見出し2'}\n\n`;
+        selectionOffsetStart = start + replacement.length - 2;
         selectionOffsetEnd = selectionOffsetStart;
         break;
       case 'h3':
-        replacement = `\n### ${selectedText || '見出し3'}\n`;
-        selectionOffsetStart = start + replacement.length - 1;
+        replacement = `\n\n### ${selectedText || '見出し3'}\n\n`;
+        selectionOffsetStart = start + replacement.length - 2;
         selectionOffsetEnd = selectionOffsetStart;
         break;
       case 'list':
-        replacement = `\n- ${selectedText || 'リスト項目'}`;
-        selectionOffsetStart = start + replacement.length;
+        replacement = `\n\n- ${selectedText || 'リスト項目'}\n\n`;
+        selectionOffsetStart = start + replacement.length - 2;
         selectionOffsetEnd = selectionOffsetStart;
         break;
       case 'ordered-list':
-        replacement = `\n1. ${selectedText || 'リスト項目'}`;
-        selectionOffsetStart = start + replacement.length;
+        replacement = `\n\n1. ${selectedText || 'リスト項目'}\n\n`;
+        selectionOffsetStart = start + replacement.length - 2;
         selectionOffsetEnd = selectionOffsetStart;
         break;
       case 'task-list':
-        replacement = `\n- [ ] ${selectedText || 'タスク項目'}`;
-        selectionOffsetStart = start + replacement.length;
+        replacement = `\n\n- [ ] ${selectedText || 'タスク項目'}\n\n`;
+        selectionOffsetStart = start + replacement.length - 2;
         selectionOffsetEnd = selectionOffsetStart;
         break;
       case 'quote':
-        replacement = `\n> ${selectedText || '引用テキスト'}\n`;
-        selectionOffsetStart = start + replacement.length - 1;
+        replacement = `\n\n> ${selectedText || '引用テキスト'}\n\n`;
+        selectionOffsetStart = start + replacement.length - 2;
         selectionOffsetEnd = selectionOffsetStart;
         break;
       case 'code':
-        replacement = `\n\`\`\`\n${selectedText || 'コード'}\n\`\`\`\n`;
-        selectionOffsetStart = start + 5;
-        selectionOffsetEnd = selectedText ? start + replacement.length - 5 : start + replacement.length - 5;
+        replacement = `\n\n\`\`\`\n${selectedText || 'コード'}\n\`\`\`\n\n`;
+        selectionOffsetStart = start + 6;
+        selectionOffsetEnd = selectedText ? start + replacement.length - 6 : start + replacement.length - 6;
         break;
       case 'inline-code':
-        replacement = `\`${selectedText || 'コード'}\``;
-        selectionOffsetStart = start + 1;
-        selectionOffsetEnd = selectedText ? start + replacement.length - 1 : start + replacement.length - 1;
+        replacement = ` \`${selectedText || 'コード'}\` `;
+        selectionOffsetStart = start + 2;
+        selectionOffsetEnd = selectedText ? start + replacement.length - 2 : start + replacement.length - 2;
         break;
       case 'link':
-        replacement = `[${selectedText || 'リンクテキスト'}](https://)`;
-        selectionOffsetStart = start + (selectedText ? replacement.length - 9 : 1); // Select inside parenthesis or text
+        replacement = ` [${selectedText || 'リンクテキスト'}](https://) `;
+        selectionOffsetStart = start + (selectedText ? replacement.length - 10 : 2); // Select inside parenthesis or text
         selectionOffsetEnd = selectionOffsetStart + (selectedText ? 8 : 6);
         break;
       case 'image':
-        replacement = `![${selectedText || '代替テキスト'}](https://)`;
-        selectionOffsetStart = start + (selectedText ? replacement.length - 9 : 2);
+        replacement = ` ![${selectedText || '代替テキスト'}](https://) `;
+        selectionOffsetStart = start + (selectedText ? replacement.length - 10 : 3);
         selectionOffsetEnd = selectionOffsetStart + (selectedText ? 8 : 6);
         break;
       case 'table':
-        replacement = `\n| ${selectedText || 'ヘッダー1'} | ヘッダー2 |\n| --- | --- |\n| セル1 | セル2 |\n`;
-        selectionOffsetStart = start + 3;
-        selectionOffsetEnd = selectedText ? start + 3 + selectedText.length : start + 3 + 'ヘッダー1'.length;
+        replacement = `\n\n| ${selectedText || 'ヘッダー1'} | ヘッダー2 |\n| --- | --- |\n| セル1 | セル2 |\n\n`;
+        selectionOffsetStart = start + 4;
+        selectionOffsetEnd = selectedText ? start + 4 + selectedText.length : start + 4 + 'ヘッダー1'.length;
         break;
       case 'hr':
-        replacement = `\n---\n`;
+        replacement = `\n\n---\n\n`;
         selectionOffsetStart = start + replacement.length;
         selectionOffsetEnd = selectionOffsetStart;
         break;
