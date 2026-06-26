@@ -215,7 +215,7 @@ export const Editor: React.FC<EditorProps> = ({
         onChange={(e) => onTitleChange(e.target.value)}
       />
       
-      {/* WordPress style block toolbar */}
+      {/* Formatting toolbar */}
       <div className="editor-toolbar">
         <button className="toolbar-btn" onClick={() => insertMarkdown('bold')} title="太字 (Ctrl+B)">
           <Bold size={16} />

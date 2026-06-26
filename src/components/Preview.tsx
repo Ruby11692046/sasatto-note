@@ -110,8 +110,7 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
   return (
     <div className="preview-container">
       <article className="article-layout">
-        {/* WordPress Style Post Category */}
-        <span className="wp-post-category">ささっとノート / Markdown</span>
+
         
         {/* Title */}
         <h1 className="wp-post-title">{displayTitle}</h1>

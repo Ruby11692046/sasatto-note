@@ -10,7 +10,7 @@
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
-  --accent-color: #007cba; /* WordPress Blue */
+  --accent-color: #007cba; /* Accent Blue */
   --accent-hover: #00669b;
   --accent-light: #e5f5fa;
   --accent-dark: #00456a;
@@ -39,7 +39,7 @@
     --text-primary: #f8fafc;
     --text-secondary: #cbd5e1;
     --text-muted: #64748b;
-    --accent-color: #38bdf8; /* WordPress Dark Blue / Sky Blue */
+    --accent-color: #38bdf8; /* Dark Accent Blue */
     --accent-hover: #7dd3fc;
     --accent-light: #0c4a6e;
     --accent-dark: #e0f2fe;
@@ -344,7 +344,7 @@ body {
   color: var(--text-muted);
 }
 
-/* WordPress-style formatting toolbar */
+/* Formatting toolbar */
 .editor-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -418,7 +418,7 @@ body {
   color: var(--text-secondary);
 }
 
-/* Preview / Article view (WordPress style) */
+/* Preview / Article view */
 .preview-container {
   height: 100%;
   overflow-y: auto;
@@ -446,7 +446,7 @@ body {
   box-shadow: var(--shadow-lg);
 }
 
-/* WordPress post elements */
+/* Post elements */
 .wp-post-category {
   display: inline-block;
   font-size: 0.75rem;
