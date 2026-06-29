@@ -42,7 +42,7 @@ const autoPreviewUrls = (text: string): string => {
         }
 
         if (isImage) {
-          return `![自動画像プレビュー](${url})`;
+          return `[${url}](${url})\n\n![自動画像プレビュー](${url})`;
         }
         
         // 2. YouTube preview
@@ -51,7 +51,7 @@ const autoPreviewUrls = (text: string): string => {
         );
         if (ytMatch) {
           const videoId = ytMatch[1];
-          return `<div class="youtube-preview-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 1rem 0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><iframe src="https://www.youtube.com/embed/${videoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+          return `[${url}](${url})\n\n<div class="youtube-preview-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 1rem 0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><iframe src="https://www.youtube.com/embed/${videoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
         }
 
         // 3. Bluesky post preview placeholder
@@ -59,14 +59,14 @@ const autoPreviewUrls = (text: string): string => {
         if (bskyMatch) {
           const handle = bskyMatch[1];
           const rkey = bskyMatch[2];
-          return `<div class="bluesky-preview-container" data-handle="${handle}" data-rkey="${rkey}"><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></div>`;
+          return `[${url}](${url})\n\n<div class="bluesky-preview-container" data-handle="${handle}" data-rkey="${rkey}"></div>`;
         }
 
         // 4. General link preview placeholder
         if (url.startsWith('http://') || url.startsWith('https://')) {
           try {
             const domain = new URL(url).hostname;
-            return `<div class="link-preview-container" data-url="${url}" data-domain="${domain}"><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></div>`;
+            return `[${url}](${url})\n\n<div class="link-preview-container" data-url="${url}" data-domain="${domain}"></div>`;
           } catch {
             // If URL parsing fails, fall through
           }
