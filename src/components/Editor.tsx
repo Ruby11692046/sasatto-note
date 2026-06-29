@@ -12,7 +12,9 @@ import {
   Link,
   Image,
   Table,
-  Minus
+  Minus,
+  Sigma,
+  Type
 } from 'lucide-react';
 
 interface EditorProps {
@@ -49,6 +51,8 @@ export const Editor: React.FC<EditorProps> = ({
       | 'image'
       | 'table'
       | 'hr'
+      | 'math'
+      | 'subtext'
   ) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -146,6 +150,16 @@ export const Editor: React.FC<EditorProps> = ({
         selectionOffsetStart = start + replacement.length;
         selectionOffsetEnd = selectionOffsetStart;
         break;
+      case 'math':
+        replacement = `\n\n$$ ${selectedText || 'E = mc^2'} $$\n\n`;
+        selectionOffsetStart = start + 5;
+        selectionOffsetEnd = selectedText ? start + replacement.length - 5 : start + replacement.length - 5;
+        break;
+      case 'subtext':
+        replacement = `\n\n-# ${selectedText || '小さく薄い文字'}\n\n`;
+        selectionOffsetStart = start + 5;
+        selectionOffsetEnd = selectedText ? start + replacement.length - 5 : start + replacement.length - 5;
+        break;
       default:
         return;
     }
@@ -230,6 +244,12 @@ export const Editor: React.FC<EditorProps> = ({
         </button>
         <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('hr'); }} title="水平線">
           <Minus size={16} />
+        </button>
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('math'); }} title="数式 (LaTeX)">
+          <Sigma size={16} />
+        </button>
+        <button type="button" className="toolbar-btn" onClick={(e) => { e.preventDefault(); insertMarkdown('subtext'); }} title="小さく薄い文字 (Discord風 -#)">
+          <Type size={16} />
         </button>
 
         <div className="toolbar-separator" />

@@ -2,6 +2,8 @@ import React, { useMemo, useEffect } from 'react';
 import { Marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { Clock, BookOpen, List } from 'lucide-react';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
 // Automatically turn raw URLs in their own lines into images, YouTube embeds, or Bluesky placeholders
 const autoPreviewUrls = (text: string): string => {
@@ -77,6 +79,29 @@ const autoPreviewUrls = (text: string): string => {
     .join('\n');
 };
 
+// Preprocess markdown text for Discord subtext and URL previews (math is handled separately during render)
+const preprocessMarkdownWithoutMath = (text: string): string => {
+  let processed = text;
+
+  // 1. Process Discord subtext: -# Text
+  processed = processed
+    .split('\n')
+    .map((line) => {
+      const match = line.match(/^-\#\s+(.+)$/);
+      if (match) {
+        const content = match[1];
+        return `<small class="discord-subtext" style="font-size: 0.85em; color: var(--text-secondary); opacity: 0.8; display: inline-block; margin: 0.2rem 0;">${content}</small>`;
+      }
+      return line;
+    })
+    .join('\n');
+
+  // 2. Process URL auto-previews
+  processed = autoPreviewUrls(processed);
+
+  return processed;
+};
+
 interface PreviewProps {
   title: string;
   content: string;
@@ -88,6 +113,17 @@ interface TocItem {
   level: number;
 }
 
+// Helper to generate consistent, URL-friendly IDs for headings (supports Japanese and other multibytes)
+const generateHeadingId = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    // Remove punctuation and special symbols, keeping alphanumeric and CJK/multibyte characters
+    .replace(/[!"#$%&'()*+,./:;<=>?@\[\\\]^`{|}~]/g, '')
+    // Replace whitespace (including full-width ideographic space) with hyphens
+    .replace(/[\s\u3000]+/g, '-');
+};
+
 // Instantiate and configure custom Marked renderer to assign IDs to headings
 const customMarked = new Marked();
 
@@ -95,14 +131,7 @@ customMarked.use({
   breaks: true,
   renderer: {
     heading({ text, depth, raw }: { text: string; depth: number; raw: string }) {
-      // Create a URL-friendly anchor ID
-      const cleanId = encodeURIComponent(
-        raw
-          .toLowerCase()
-          .trim()
-          .replace(/[^\w\s-]/g, '') // remove non-word characters except spaces and hyphens
-          .replace(/\s+/g, '-')     // replace spaces with hyphens
-      );
+      const cleanId = generateHeadingId(raw);
       // marked v5+ heading renderer returns HTML string
       return `<h${depth} id="${cleanId}">${text}</h${depth}>`;
     },
@@ -119,12 +148,59 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
   // Parse Markdown to HTML securely
   const htmlContent = useMemo(() => {
     if (!content) return '<p style="color: var(--text-muted); font-style: italic;">本文が入力されていません。左側のエディタで執筆してください。</p>';
-    const processedContent = autoPreviewUrls(content);
-    const parsed = customMarked.parse(processedContent) as string;
-    return DOMPurify.sanitize(parsed, {
-      ADD_TAGS: ['iframe'],
-      ADD_ATTR: ['allowfullscreen', 'frameborder', 'allow', 'target', 'rel', 'data-handle', 'data-rkey']
+    
+    // Array to store math HTML components temporarily
+    const mathBlocks: string[] = [];
+    let tempContent = content;
+
+    // 1. Temporary replace LaTeX math with placeholders before marked & DOMPurify
+    // Block math: $$ ... $$
+    tempContent = tempContent.replace(/\$\$\s*([\s\S]*?)\s*\$\$/g, (match, expr) => {
+      try {
+        const rendered = `<div class="math-block" style="overflow-x: auto; padding: 0.8rem 0; text-align: center;">${katex.renderToString(expr, { displayMode: true, throwOnError: false })}</div>`;
+        const placeholder = `<div class="math-placeholder-block" data-index="${mathBlocks.length}"></div>`;
+        mathBlocks.push(rendered);
+        return placeholder;
+      } catch (err) {
+        console.error('KaTeX block error:', err);
+        return match;
+      }
     });
+
+    // Inline math: $ ... $
+    tempContent = tempContent.replace(/\$([^\s\$\n](?:[^\$\n]*?[^\s\$\n])?)\$/g, (match, expr) => {
+      try {
+        const rendered = `<span class="math-inline" style="padding: 0 0.15rem;">${katex.renderToString(expr, { displayMode: false, throwOnError: false })}</span>`;
+        const placeholder = `<span class="math-placeholder-inline" data-index="${mathBlocks.length}"></span>`;
+        mathBlocks.push(rendered);
+        return placeholder;
+      } catch (err) {
+        console.error('KaTeX inline error:', err);
+        return match;
+      }
+    });
+
+    // 2. Preprocess Discord subtext and URL previews
+    const processedContent = preprocessMarkdownWithoutMath(tempContent);
+    const parsed = customMarked.parse(processedContent) as string;
+
+    // 3. Sanitize with DOMPurify
+    let sanitized = DOMPurify.sanitize(parsed, {
+      ADD_TAGS: ['iframe', 'small'],
+      ADD_ATTR: [
+        'allowfullscreen', 'frameborder', 'allow', 'target', 'rel', 
+        'data-handle', 'data-rkey', 'data-url', 'data-domain', 
+        'data-index', 'style', 'class'
+      ]
+    });
+
+    // 4. Restore math HTML from placeholders
+    sanitized = sanitized.replace(/<(div|span) class="math-placeholder-(block|inline)" data-index="(\d+)"><\/\1>/g, (match, _tag, _type, indexStr) => {
+      const index = parseInt(indexStr, 10);
+      return mathBlocks[index] !== undefined ? mathBlocks[index] : match;
+    });
+
+    return sanitized;
   }, [content]);
 
   // Extract Table of Contents (TOC) from markdown headers
@@ -145,13 +221,7 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
         // Remove simple Markdown formatting like bold/italic from TOC text
         const cleanText = rawText.replace(/[\*_`~]/g, '');
 
-        let cleanId = encodeURIComponent(
-          rawText
-            .toLowerCase()
-            .trim()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-        );
+        let cleanId = generateHeadingId(rawText);
 
         // Deduplicate IDs
         if (seenIds.has(cleanId)) {
