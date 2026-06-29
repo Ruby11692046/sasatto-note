@@ -61,6 +61,16 @@ const autoPreviewUrls = (text: string): string => {
           const rkey = bskyMatch[2];
           return `<div class="bluesky-preview-container" data-handle="${handle}" data-rkey="${rkey}"><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></div>`;
         }
+
+        // 4. General link preview placeholder
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+          try {
+            const domain = new URL(url).hostname;
+            return `<div class="link-preview-container" data-url="${url}" data-domain="${domain}"><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></div>`;
+          } catch {
+            // If URL parsing fails, fall through
+          }
+        }
       }
       return line;
     })
@@ -182,11 +192,9 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
     }
   };
 
-  // Render Bluesky embeds dynamically after HTML content is loaded
+  // Render Bluesky and general link OGP previews dynamically after HTML content is loaded
   useEffect(() => {
-    const containers = document.querySelectorAll('.bluesky-preview-container');
-    
-    // HTML escape helper
+    // 1. HTML escape helper
     const escapeHtml = (unsafe: string): string => {
       return unsafe
         .replace(/&/g, "&amp;")
@@ -196,7 +204,9 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
         .replace(/'/g, "&#039;");
     };
 
-    containers.forEach(async (container) => {
+    // 2. Process Bluesky embeds
+    const bskyContainers = document.querySelectorAll('.bluesky-preview-container');
+    bskyContainers.forEach(async (container) => {
       if (container.classList.contains('loaded')) return;
       
       const handle = container.getAttribute('data-handle');
@@ -205,7 +215,6 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
       
       container.classList.add('loaded');
       
-      // Keep track of the original link to fallback
       const originalLink = container.querySelector('a')?.href || `https://bsky.app/profile/${handle}/post/${rkey}`;
       
       try {
@@ -281,6 +290,106 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
             <a href="${originalLink}" target="_blank" rel="noopener noreferrer" style="color: #0285ff; text-decoration: none; font-weight: 500;">Blueskyで直接表示する</a>
           </div>
         `;
+      }
+    });
+
+    // 3. Process general link OGP previews
+    const linkPreviewContainers = document.querySelectorAll('.link-preview-container');
+    
+    const parseOgp = (html: string, urlStr: string) => {
+      const getMeta = (propertyOrName: string): string => {
+        const regex = new RegExp(`<meta[^>]*(?:property|name)=["']${propertyOrName}["'][^>]*content=["']([^"']*)["']`, 'i');
+        const match = html.match(regex);
+        if (match) return match[1];
+        
+        const regexAlt = new RegExp(`<meta[^>]*content=["']([^"']*)["'][^>]*(?:property|name)=["']${propertyOrName}["']`, 'i');
+        const matchAlt = html.match(regexAlt);
+        return matchAlt ? matchAlt[1] : '';
+      };
+
+      const getTitle = (): string => {
+        const ogTitle = getMeta('og:title');
+        if (ogTitle) return ogTitle;
+        const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+        return titleMatch ? titleMatch[1] : '';
+      };
+
+      const getDescription = (): string => {
+        return getMeta('og:description') || getMeta('description') || '';
+      };
+
+      const getImage = (): string => {
+        const ogImage = getMeta('og:image');
+        if (!ogImage) return '';
+        try {
+          return new URL(ogImage, urlStr).toString();
+        } catch {
+          return ogImage;
+        }
+      };
+
+      const getSiteName = (): string => {
+        return getMeta('og:site_name') || '';
+      };
+
+      return {
+        title: getTitle().replace(/<[^>]*>/g, '').trim(),
+        description: getDescription().replace(/<[^>]*>/g, '').trim(),
+        image: getImage().trim(),
+        siteName: getSiteName().replace(/<[^>]*>/g, '').trim()
+      };
+    };
+
+    linkPreviewContainers.forEach(async (container) => {
+      if (container.classList.contains('loaded')) return;
+      
+      const url = container.getAttribute('data-url');
+      const domain = container.getAttribute('data-domain') || '';
+      if (!url) return;
+      
+      container.classList.add('loaded');
+      
+      try {
+        // Fetch via corsproxy.io (direct HTML response)
+        const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+        if (!response.ok) throw new Error('Proxy request failed');
+        
+        const html = await response.text();
+        const ogp = parseOgp(html, url);
+        if (!ogp.title) {
+          throw new Error('Could not parse OGP title');
+        }
+        
+        const title = ogp.title;
+        const description = ogp.description ? (ogp.description.length > 90 ? ogp.description.substring(0, 90) + '...' : ogp.description) : '';
+        const image = ogp.image;
+        const siteName = ogp.siteName || domain;
+        const favicon = `https://www.google.com/s2/favicons?sz=32&domain=${domain}`;
+        
+        container.innerHTML = `
+          <a href="${url}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit; display: block; max-width: 550px; margin: 16px 0;">
+            <div class="link-card" style="border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; display: flex; background-color: var(--bg-secondary, rgba(255,255,255,0.02)); box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: transform 0.2s ease, border-color 0.2s ease; cursor: pointer;">
+              <div class="link-card-content" style="flex: 1; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-width: 0;">
+                <div style="min-width: 0;">
+                  <div class="link-card-title" style="font-weight: 700; font-size: 0.9rem; line-height: 1.4; color: var(--text-primary); margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">${escapeHtml(title)}</div>
+                  ${description ? `<div class="link-card-description" style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">${escapeHtml(description)}</div>` : ''}
+                </div>
+                <div class="link-card-meta" style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  <img src="${favicon}" alt="" style="width: 14px; height: 14px; border-radius: 2px; flex-shrink: 0;" onerror="this.style.display='none'" />
+                  <span style="font-weight: 500; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(siteName)}</span>
+                </div>
+              </div>
+              ${image ? `
+                <div class="link-card-image-wrapper" style="width: 120px; flex-shrink: 0; background-color: rgba(0,0,0,0.03); border-left: 1px solid var(--border-color); position: relative; overflow: hidden;">
+                  <img src="${image}" alt="" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0;" onerror="this.parentElement.style.display='none'" />
+                </div>
+              ` : ''}
+            </div>
+          </a>
+        `;
+      } catch (err) {
+        console.warn('Failed to load OGP preview, falling back to basic link:', url, err);
+        // Fallback is already rendered in the HTML placeholder (just a basic anchor)
       }
     });
   }, [htmlContent]);

@@ -176,12 +176,12 @@ export default function App() {
 
   // 7. Update document title in read-only mode
   useEffect(() => {
-    if (isReadOnly && title.trim()) {
-      document.title = `${title} - ささっとノート`;
+    if (isReadOnly) {
+      document.title = title.trim() ? `${title} - ささっとノート` : 'ささっとノート';
     } else {
       document.title = 'ささっとノート';
     }
-  }, [isReadOnly, title]);
+  }, [isReadOnly, isReadOnly ? title : null]);
 
   if (isLoading) {
     return (
