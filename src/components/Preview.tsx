@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { Clock, BookOpen, List } from 'lucide-react';
 
-// Automatically turn raw URLs in their own lines into images or YouTube embeds
+// Automatically turn raw URLs in their own lines into images, YouTube embeds, or Bluesky placeholders
 const autoPreviewUrls = (text: string): string => {
   return text
     .split('\n')
@@ -52,6 +52,14 @@ const autoPreviewUrls = (text: string): string => {
         if (ytMatch) {
           const videoId = ytMatch[1];
           return `<div class="youtube-preview-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; margin: 1rem 0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"><iframe src="https://www.youtube.com/embed/${videoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+        }
+
+        // 3. Bluesky post preview placeholder
+        const bskyMatch = url.match(/^https?:\/\/bsky\.app\/profile\/([^\/]+)\/post\/([^\/]+)$/i);
+        if (bskyMatch) {
+          const handle = bskyMatch[1];
+          const rkey = bskyMatch[2];
+          return `<div class="bluesky-preview-container" data-handle="${handle}" data-rkey="${rkey}"><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></div>`;
         }
       }
       return line;
@@ -105,7 +113,7 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
     const parsed = customMarked.parse(processedContent) as string;
     return DOMPurify.sanitize(parsed, {
       ADD_TAGS: ['iframe'],
-      ADD_ATTR: ['allowfullscreen', 'frameborder', 'allow', 'target', 'rel']
+      ADD_ATTR: ['allowfullscreen', 'frameborder', 'allow', 'target', 'rel', 'data-handle', 'data-rkey']
     });
   }, [content]);
 
@@ -173,6 +181,109 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
       window.history.pushState(null, '', `#${window.location.hash.split('?')[0] || ''}?heading=${id}`);
     }
   };
+
+  // Render Bluesky embeds dynamically after HTML content is loaded
+  useEffect(() => {
+    const containers = document.querySelectorAll('.bluesky-preview-container');
+    
+    // HTML escape helper
+    const escapeHtml = (unsafe: string): string => {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    };
+
+    containers.forEach(async (container) => {
+      if (container.classList.contains('loaded')) return;
+      
+      const handle = container.getAttribute('data-handle');
+      const rkey = container.getAttribute('data-rkey');
+      if (!handle || !rkey) return;
+      
+      container.classList.add('loaded');
+      
+      // Keep track of the original link to fallback
+      const originalLink = container.querySelector('a')?.href || `https://bsky.app/profile/${handle}/post/${rkey}`;
+      
+      try {
+        container.innerHTML = `
+          <div class="bsky-loading" style="padding: 1rem; color: var(--text-secondary); font-style: italic; border: 1px solid var(--border-color); border-radius: 12px; font-size: 0.85rem; max-width: 550px; margin: 16px 0;">
+            Blueskyの投稿を読み込み中...
+          </div>
+        `;
+        
+        const uri = `at://${handle}/app.bsky.feed.post/${rkey}`;
+        const response = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.feed.getPostThread?uri=${encodeURIComponent(uri)}`);
+        if (!response.ok) throw new Error('Failed to fetch post');
+        
+        const data = await response.json();
+        const post = data.thread?.post;
+        if (!post) throw new Error('Post not found');
+        
+        const author = post.author || {};
+        const record = post.record || {};
+        const embed = post.embed || {};
+        
+        const avatar = author.avatar || '';
+        const displayName = author.displayName || author.handle || 'Blueskyユーザー';
+        const bskyHandle = author.handle;
+        const text = record.text || '';
+        const createdAt = new Date(record.createdAt).toLocaleString('ja-JP', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        let imagesHtml = '';
+        if (embed.images && embed.images.length > 0) {
+          imagesHtml = `<div class="bsky-embed-images" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 12px;">`;
+          embed.images.forEach((img: any) => {
+            imagesHtml += `<img src="${img.thumb}" alt="${img.alt || ''}" style="width: 100%; border-radius: 8px; cursor: pointer; border: 1px solid var(--border-color); object-fit: cover; max-height: 200px;" onclick="window.open('${img.fullsize}', '_blank')" />`;
+          });
+          imagesHtml += `</div>`;
+        }
+        
+        container.innerHTML = `
+          <div class="bsky-card" style="border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; background-color: var(--bg-secondary, rgba(255,255,255,0.02)); max-width: 550px; margin: 16px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.04); transition: transform 0.2s ease;">
+            <div class="bsky-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+               <a href="https://bsky.app/profile/${bskyHandle}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; text-decoration: none; color: inherit; gap: 10px;">
+                 ${avatar ? `<img src="${avatar}" alt="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />` : `<div style="width: 40px; height: 40px; border-radius: 50%; background-color: #0285ff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem;">${displayName[0]}</div>`}
+                 <div style="display: flex; flex-direction: column; line-height: 1.3;">
+                   <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary);">${displayName}</span>
+                   <span style="font-size: 0.78rem; color: var(--text-secondary);">@${bskyHandle}</span>
+                 </div>
+               </a>
+               <svg viewBox="0 0 24 24" width="18" height="18" fill="#0285ff" style="flex-shrink: 0;"><path d="M12 10.8c-1.34-1.25-3.32-3.08-5.32-4.9-1.12-1.02-2.3-2.07-3.07-2.74C3.06 2.7 2.18 2 1.62 2 .8 2 0 2.5 0 3.33c0 .8.9 2.56 1.83 4.25 1.58 2.87 3.9 6.2 5.56 7.6 1.27.87 2.45.62 3.12-.34.1-.14.23-.38.27-.47.05-.1.1-.3.08-.13.06.33.22.76.38.97.68.96 1.85 1.2 3.12.33 1.66-1.4 3.98-4.72 5.56-7.6C23.1 5.9 24 4.14 24 3.33c0-.83-.8-1.33-1.62-1.33-.56 0-1.44.7-1.99 1.16-.77.67-1.95 1.72-3.07 2.74-2 1.82-3.98 3.65-5.32 4.9z"/></svg>
+            </div>
+            <div class="bsky-body" style="font-size: 0.92rem; line-height: 1.5; color: var(--text-primary); white-space: pre-wrap; word-break: break-word; margin-bottom: 8px;">${escapeHtml(text)}</div>
+            ${imagesHtml}
+            <div class="bsky-footer" style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary);">
+              <a href="${originalLink}" target="_blank" rel="noopener noreferrer" style="color: var(--text-secondary); text-decoration: none; hover: underline;">
+                <span>${createdAt}</span>
+              </a>
+              <div style="display: flex; gap: 12px; font-weight: 500;">
+                <span>❤️ ${post.likeCount || 0}</span>
+                <span>🔄 ${post.repostCount || 0}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        console.error('Failed to fetch Bluesky post:', err);
+        container.innerHTML = `
+          <div class="bsky-error" style="border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; font-size: 0.8rem; max-width: 550px; background: rgba(220, 38, 38, 0.03); border-left: 4px solid #dc2626; margin: 16px 0;">
+            <p style="margin: 0 0 6px 0; color: var(--text-secondary); font-weight: 500;">Blueskyの投稿を読み込めませんでした。</p>
+            <a href="${originalLink}" target="_blank" rel="noopener noreferrer" style="color: #0285ff; text-decoration: none; font-weight: 500;">Blueskyで直接表示する</a>
+          </div>
+        `;
+      }
+    });
+  }, [htmlContent]);
 
   return (
     <div className="preview-container">
