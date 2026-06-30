@@ -130,10 +130,10 @@ const customMarked = new Marked();
 customMarked.use({
   breaks: true,
   renderer: {
-    heading({ text, depth, raw }: { text: string; depth: number; raw: string }) {
-      const cleanId = generateHeadingId(raw);
-      // marked v5+ heading renderer returns HTML string
-      return `<h${depth} id="${cleanId}">${text}</h${depth}>`;
+    heading(this: any, { text, depth, tokens }: { text: string; depth: number; tokens: any[] }) {
+      const cleanId = generateHeadingId(text);
+      const contentHtml = this.parser.parseInline(tokens);
+      return `<h${depth} id="${cleanId}">${contentHtml}</h${depth}>`;
     },
     link({ href, title, text }: { href: string; title?: string | null; text: string }) {
       const isInternal = href.startsWith('#');
