@@ -188,6 +188,7 @@ export const Preview: React.FC<PreviewProps> = ({ title, content }) => {
     let sanitized = DOMPurify.sanitize(parsed, {
       ADD_TAGS: ['iframe', 'small'],
       ADD_ATTR: [
+        'id',
         'allowfullscreen', 'frameborder', 'allow', 'target', 'rel', 
         'data-handle', 'data-rkey', 'data-url', 'data-domain', 
         'data-index', 'style', 'class'
